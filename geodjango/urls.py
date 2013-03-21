@@ -5,5 +5,5 @@ from django.conf.urls import patterns, include, url
 # admin.autodiscover()
 
 urlpatterns = patterns('',
-    url(r'^twitphl/$', 'twitphl.views.index'),
+    url(r'^twitphl/$', 'twitphl.views.index')
 )
