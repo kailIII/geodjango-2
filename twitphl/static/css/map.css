@@ -14,10 +14,40 @@ color:#333;
 .q6-9 { fill:rgb(33,113,181); }
 .q7-9 { fill:rgb(8,81,156); }
 .q8-9 { fill:rgb(8,48,107); }
+.no { fill: #F0F0F0; }
 
 path {
 stroke: #fff;
 stroke-width: .5;
+}
+
+#caption, #pageNav {
+font-family: "HelveticaNeue-Light", "Helvetica Neue Light", "Helvetica Neue",
+Helvetica, Arial, "Lucida Grande", sans-serif;
+width: 650px;
+}
+
+.filterh{
+  font-size: 14px;
+  font-weight: 600;
+}
+
+#pageNav{
+  float: left;
+  width:200px;
+  margin-right: 20px;
+  padding-top:55px;
+  margin-bottom: auto;
+  font-size: 12px;
+  padding-right:20px;
+  padding-left:10px;
+  position: absolute;
+  min-height: 725px;
+}
+
+#content{
+  position: relative;
+  margin-left:250px;
 }
 
 path:hover {

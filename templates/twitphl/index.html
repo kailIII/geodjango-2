@@ -1,57 +1,89 @@
 <!DOCTYPE html>
 <meta charset="utf-8">
+<head>
     <link rel="stylesheet" href="{{ STATIC_URL }}css/map.css" type="text/css" media="screen" />
     <link rel="stylesheet" href="{{ STATIC_URL }}css/tipsy.css" type="text/css" media="screen" />
+    <link rel="stylesheet" href="{{ STATIC_URL }}css/jquery-ui.css" type="text/css" media="screen" />
+    <script src="http://d3js.org/d3.v3.min.js"></script>
+    <script src="http://d3js.org/topojson.v0.min.js"></script>
+    <script src="http://code.jquery.com/jquery-latest.js"></script>
+    <script src="http://code.jquery.com/ui/1.10.2/jquery-ui.js"></script>
+    <script src="https://raw.github.com/bigmlcom/tipsy/master/src/javascripts/jquery.tipsy.js" type="text/javascript" charset="utf-8"></script>
+    <script>  $(document).ready ( function () {$("svg").tooltip(); }); </script>
+    </head>
     <body>
-        <h1>Super Secret, Not Quite Finished, Going to be Awesome Project...</h1>       
-        <script src="http://d3js.org/d3.v3.min.js"></script>
-        <script src="http://d3js.org/topojson.v0.min.js"></script>
-        <script src="http://code.jquery.com/jquery-latest.js"></script>
-        <script src="https://raw.github.com/bigmlcom/tipsy/master/src/javascripts/jquery.tipsy.js"></script>
+        <div id="pageNav">
+        <div class="filterh"> Most Recent Beers </div><br>
+        <div class="filterh"> Most Popular Bars </div><br>
+        {% for bar in bars %}
+        {{ bar.bar }}<br>
+        {% endfor %}
+        <br>
+        <div class="filterh"> Most Popular Beers </div><br>
+        <div class="filterh"> Most Popular Bars </div><br>
+        {% for nabe in nabsum %}
+        {{ nabe.name }}<br>
+        {% endfor %}
+        </div>
+        <div id="content">
+        <h1>Real-time Beer Heatmap of Philadelphia</h1>
+        <div id="slider"></div>
+        <div id="caption">
+        <br>Time of Day
+        </div>
+        </div>
+
         <script>
-            var width = 950,
-            height = 650;
+        var width = 650,
+        height = 650;
 
-            var projection = d3.geo.albers()
-            .scale(120000)
-            .center([22.85, 40.038]);
+        var rateById = {{ nabe_count_json }};
 
-            var path = d3.geo.path()
-            .projection(projection);
+        var projection = d3.geo.albers()
+        .scale(120000)
+        .center([22.995, 40.022]);
 
-            var svg = d3.select("body").append("svg")
-            .attr("width", width)
-            .attr("height", height);
+        var path = d3.geo.path()
+        .projection(projection);
 
-            var quantize = d3.scale.quantize()
-            .domain([0, 1])
-            .range(d3.range(9).map(function(i) { return "q" + i + "-9"; }));
+        var svg = d3.select("#content").append("svg")
+        .attr("width", width)
+        .attr("height", height);
 
-            var rateById = {};
+        var quantize = d3.scale.quantize()
+        .domain([0, 10])
+        .range(d3.range(9).map(function(i) { return "q" + i + "-9"; }));
 
-            d3.csv("{{ STATIC_URL }}data/test.csv", function(data) { data.forEach(function(d) { rateById[d.id] = +d.rate; }); });
-
-            d3.json("{{ STATIC_URL }}data/newnabes.json", function(error, topology) {
-                var nabes = topojson.object(topology, topology.objects.temp);
-                                            
-                svg.selectAll("path")
-                .data(nabes.geometries)
-                .enter().append("path")
-                .attr("class", function(d) { return quantize(rateById[d.id]); })
-                .attr("d", path);
-                    
-                svg.selectAll("path")
-                .data(nabes.geometries)
-                .append("svg:title")
-                .attr("class", function(d) { return "path " + d.id; })
-                .attr("transform", function(d) { return "translate(" + path.centroid(d) + ")"; })
-                .attr("dy", ".35em")
-                .text(function(d) { return d.properties.NAME; });
+        d3.json("{{ STATIC_URL }}data/newnabes.json", function(error, topology) {
+            var nabes = topojson.object(topology, topology.objects.temp);
+                                        
+            svg.selectAll("path")
+            .data(nabes.geometries)
+            .enter().append("path")
+            .attr("class", function(d) { 
+                if (rateById[d.id] == -1) return "no";
+                else return quantize(rateById[d.id]); 
+            })
+            .attr("d", path);
                 
-                $("path").tipsy({gravity:'w', opacity: 0.7});
-            });
-        </script>      
-        <script>  $(document).ready ( function () {$("svg").tooltip(); }); </script>
-        </body>                
+            svg.selectAll("path")
+            .data(nabes.geometries)
+            .append("svg:title")
+            .attr("class", function(d) { return "path " + d.id; })
+            .attr("transform", function(d) { return "translate(" + path.centroid(d) + ")"; })
+            .attr("dy", ".35em")
+            .text(function(d) { return d.properties.NAME; });
+            
+            $("path").tipsy({gravity:'w', opacity: 0.7});
+        });
+    </script>   
+    <script>  $(document).ready ( function () {$("svg").tooltip(); }); </script>  
+    <script>
+    $(function() {
+    $( "#slider" ).slider();
+    $( ".selector" ).slider({ max: 1 });
+    });
+    </script>   
+</body>                       
 </html>
 

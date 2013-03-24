@@ -1,8 +1,10 @@
 from django.template import Context, loader, RequestContext
 from django.http import HttpResponse
-from twitphl.models import BeerLocs
+from twitphl.models import BeerLocs, Neighborhoods
+from django.db.models import Count
 import urllib
 import simplejson
+import json
 from django.contrib.gis.geos import GEOSGeometry
 
 
@@ -21,10 +23,21 @@ def index(request):
 		loc =  GEOSGeometry('POINT(' + str(lng) + ' ' + str(lat) + ')')
 		bp = BeerLocs(id=uid, lng=lng, lat=lat, bar=v, locs=loc)
 		bp.save()
-	t = loader.get_template('twitphl/index.html')
-	c = RequestContext(request)
 
-	#select name, count(*) from nabes ,  twitphl_beerlocs where  ST_Contains(geom, locs) group by name ;
+	bars = BeerLocs.objects.values('bar').annotate(barcount=Count('bar')).order_by('-barcount')[:5]
+	a = Neighborhoods.objects.raw('select n.id, name, count(*) from twitphl_neighborhoods n,  twitphl_beerlocs where  ST_Contains(geom, locs) group by n.id')
+	allnabes = Neighborhoods.objects.values('id')
+	suma = sum(1 for result in a)
+	nabsum = {}
+	for i in a:
+		nabsum[int(i.id)] = int(i.count)
+	for nabe in allnabes:
+	    if nabsum.get(nabe['id']) == None:
+             nabsum[int(nabe['id'])] = -1
+	t = loader.get_template('twitphl/index.html')
+	c = RequestContext(request, {'bars': bars, 'nabe_count_json' : nabsum})
+
+	#sealect name, count(*) from nabes ,  twitphl_beerlocs where  ST_Contains(geom, locs) group by name ;
 
 	return HttpResponse(t.render(c))
 

@@ -9,8 +9,8 @@ class BeerLocs(models.Model):
 
 
 class Neighborhoods(models.Model):
-    name = models.CharField(max_length=200)
-    geom = models.PolygonField()
+    name = models.CharField(max_length=80)
+    geom = models.MultiPolygonField()
     objects = models.GeoManager()
 
 
