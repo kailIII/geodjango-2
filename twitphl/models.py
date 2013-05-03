@@ -5,6 +5,7 @@ class BeerLocs(models.Model):
 	lng = models.FloatField()
 	lat = models.FloatField()
 	bar = models.CharField(max_length=200)
+	time = models.DateTimeField()
 	locs = models.PointField()
 
 

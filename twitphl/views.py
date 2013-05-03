@@ -5,6 +5,7 @@ from django.db.models import Count
 import urllib
 import simplejson
 import json
+import datetime
 from django.contrib.gis.geos import GEOSGeometry
 
 
@@ -16,28 +17,30 @@ def index(request):
 	results = simplejson.loads(search.read())
 	checkins = results['response']['checkins']['items']
 	for i in range(len(checkins)):
-		uid = results['response']['checkins']['items'][i]['user']['uid']
+		uid = results['response']['checkins']['items'][i]['checkin_id']
+		created_at = results['response']['checkins']['items'][i]['created_at'].split()
+		dt = ' '.join([created_at[3], created_at[2], created_at[1], created_at[4]])
+		dt = datetime.datetime.strptime(dt, "%Y %b %d %H:%M:%S") - datetime.timedelta(hours=5)
 		lng = results['response']['checkins']['items'][i]['venue']['location']['lng']
 		lat = results['response']['checkins']['items'][i]['venue']['location']['lat']
 		v = results['response']['checkins']['items'][i]['venue']['venue_name']
 		loc =  GEOSGeometry('POINT(' + str(lng) + ' ' + str(lat) + ')')
-		bp = BeerLocs(id=uid, lng=lng, lat=lat, bar=v, locs=loc)
+		bp = BeerLocs(id=uid, lng=lng, lat=lat, bar=v, time=dt, locs=loc)
 		bp.save()
 
 	bars = BeerLocs.objects.values('bar').annotate(barcount=Count('bar')).order_by('-barcount')[:5]
-	a = Neighborhoods.objects.raw('select n.id, name, count(*) from twitphl_neighborhoods n,  twitphl_beerlocs where  ST_Contains(geom, locs) group by n.id')
+
+	a = Neighborhoods.objects.raw('select n.id, name, count(*) from twitphl_neighborhoods n,  twitphl_beerlocs where ST_Contains(geom, locs) group by n.id')
 	allnabes = Neighborhoods.objects.values('id')
-	suma = sum(1 for result in a)
 	nabsum = {}
+	tday = datetime.datetime.today() + datetime.timedelta(hours=1)
 	for i in a:
 		nabsum[int(i.id)] = int(i.count)
 	for nabe in allnabes:
 	    if nabsum.get(nabe['id']) == None:
              nabsum[int(nabe['id'])] = -1
 	t = loader.get_template('twitphl/index.html')
-	c = RequestContext(request, {'bars': bars, 'nabe_count_json' : nabsum})
-
-	#sealect name, count(*) from nabes ,  twitphl_beerlocs where  ST_Contains(geom, locs) group by name ;
+	c = RequestContext(request, {'bars': bars, 'nabe_count_json' : nabsum, 'tday': tday})
 
 	return HttpResponse(t.render(c))
 
